@@ -2,27 +2,21 @@
   "mcpServers": {
     "gmail": {
       "command": "node",
-      "args": ["./src/mcp-gmail/index.js"],
-      "env": {
-        "GMAIL_CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID",
-        "GMAIL_CLIENT_SECRET": "YOUR_GOOGLE_CLIENT_SECRET",
-        "GMAIL_REFRESH_TOKEN": "YOUR_GMAIL_REFRESH_TOKEN"
-      }
+      "args": ["./mcp-gmail/index.js"]
     },
     "google-calendar": {
       "command": "npx",
       "args": ["-y", "@cocal/google-calendar-mcp"],
       "env": {
-        "GOOGLE_CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET": "YOUR_GOOGLE_CLIENT_SECRET",
-        "GOOGLE_REFRESH_TOKEN": "YOUR_CALENDAR_REFRESH_TOKEN"
+        "GOOGLE_OAUTH_CREDENTIALS": "/home/yourname/.config/google-calendar-mcp/gcp-oauth.keys.json",
+        "GOOGLE_CALENDAR_MCP_TOKEN_PATH": "/home/yourname/.config/google-calendar-mcp/tokens.json"
       }
     },
     "imap": {
       "command": "node",
-      "args": ["./src/mcp-imap/index.js"],
+      "args": ["./mcp-imap/index.js"],
       "env": {
-        "IMAP_HOST": "mail.yourdomain.com",
+        "IMAP_HOST": "mail.youromain.com",
         "IMAP_PORT": "993",
         "IMAP_USER": "you@yourdomain.com",
         "IMAP_PASSWORD": "YOUR_IMAP_PASSWORD",
@@ -30,9 +24,15 @@
       }
     },
     "sncf": {
-      "comment": "French train schedules — no API key required",
       "command": "node",
-      "args": ["./src/mcp-sncf/index.js"]
+      "args": ["./mcp-sncf/index.js"],
+      "env": {
+        "SNCF_API_KEY": "YOUR_SNCF_API_KEY"
+      }
+    },
+    "airbnb": {
+      "command": "node",
+      "args": ["./node_modules/@openbnb/mcp-server-airbnb/dist/index.js"]
     }
   }
 }

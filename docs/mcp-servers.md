@@ -1,182 +1,217 @@
-# MCP Servers
+# Serveurs MCP
 
-MCP (Model Context Protocol) is Anthropic's standard for giving Claude access to external tools. Claude Code CLI auto-discovers MCP servers configured in `.mcp.json` in the project directory.
-
-## How MCP Works Here
-
-When Claude is spawned by the bridge, it reads `.mcp.json` from the `ASSISTANT_DIR`. Each entry is a server process Claude can call. Claude decides **on its own** when to use which tool — you don't need to tell it "use Gmail to check emails", just say "check my emails".
+MCP (Model Context Protocol) est le standard d'Anthropic pour donner à Claude accès à des outils externes. Claude Code CLI auto-découvre les serveurs MCP configurés dans `.mcp.json` à la racine du projet.
 
 ---
 
-## `.mcp.json` Structure
+## Claude choisit ses outils tout seul
+
+C'est l'un des aspects les plus puissants du système. Quand Claude est lancé par le bridge, il lit `.mcp.json` et découvre automatiquement tous les outils disponibles. Il décide **de lui-même** quand utiliser lequel — sans que tu aies besoin de lui dire.
+
+**Exemples :**
+```
+"Check mes mails" → Claude appelle gmail_list_unread sans qu'on lui dise
+"C'est quoi mon agenda demain ?" → Claude appelle list_events
+"Trouve-moi un Airbnb à Lyon pour ce week-end" → Claude appelle airbnb_search
+"Prochain train Paris-Bordeaux ?" → Claude appelle search_trains
+```
+
+**Il peut aussi suggérer d'ajouter de nouveaux MCP.** Si tu lui demandes quelque chose qu'il ne peut pas faire (ex: "consulte mes notes Notion"), il peut répondre : *"Je n'ai pas accès à Notion pour l'instant. Tu veux que j'installe le MCP Notion ?"* — et si tu dis oui, il peut modifier `.mcp.json` lui-même et te demander de redémarrer le process.
+
+C'est ça la vraie différence avec un bot classique : il n'y a pas de `if message.contains("mail") then checkEmail()`. Claude comprend l'intention et choisit l'outil.
+
+---
+
+## Structure du `.mcp.json`
 
 ```json
 {
   "mcpServers": {
     "gmail": {
       "command": "node",
-      "args": ["/path/to/project/mcp-gmail/index.js"],
-      "env": {
-        "GMAIL_CLIENT_ID": "...",
-        "GMAIL_CLIENT_SECRET": "...",
-        "GMAIL_REFRESH_TOKEN": "..."
-      }
+      "args": ["./mcp-gmail/index.js"]
     },
     "google-calendar": {
       "command": "npx",
       "args": ["-y", "@cocal/google-calendar-mcp"],
       "env": {
-        "GOOGLE_CLIENT_ID": "...",
-        "GOOGLE_CLIENT_SECRET": "...",
-        "GOOGLE_REFRESH_TOKEN": "..."
-      }
-    },
-    "imap": {
-      "command": "node",
-      "args": ["/path/to/project/mcp-imap/index.js"],
-      "env": {
-        "IMAP_HOST": "mail.example.com",
-        "IMAP_USER": "you@example.com",
-        "IMAP_PASSWORD": "..."
+        "GOOGLE_OAUTH_CREDENTIALS": "/path/to/gcp-oauth.keys.json",
+        "GOOGLE_CALENDAR_MCP_TOKEN_PATH": "/path/to/tokens.json"
       }
     },
     "sncf": {
       "command": "node",
-      "args": ["/path/to/project/mcp-sncf/index.js"]
+      "args": ["./mcp-sncf/index.js"],
+      "env": {
+        "SNCF_API_KEY": "..."
+      }
+    },
+    "airbnb": {
+      "command": "node",
+      "args": ["./node_modules/@openbnb/mcp-server-airbnb/dist/index.js"]
     }
   }
 }
 ```
 
-See `.mcp.example.json` for the full template.
+Voir `.mcp.example.json` pour le template complet.
 
 ---
 
-## MCP Server 1: Gmail
+## MCP 1 : Gmail
 
-**Purpose:** Read unread emails, search emails, send emails.
+**Usage :** lire les mails non lus, chercher, envoyer.
 
-**Install:**
+**Install :**
 ```bash
-# The mcp-gmail server is included in src/mcp-gmail/
-npm install --prefix src/mcp-gmail
+npm install --prefix mcp-gmail
 ```
 
-**Google OAuth Setup:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a project → Enable Gmail API
-3. Create OAuth 2.0 credentials (Desktop app)
-4. Download the credentials JSON
-5. Run the auth script:
+**Google OAuth :**
+1. [Google Cloud Console](https://console.cloud.google.com) → créer un projet
+2. Activer l'API Gmail
+3. Créer des credentials OAuth 2.0 (application Desktop)
+4. Télécharger le JSON credentials
+5. Générer le refresh token :
    ```bash
    node tools/google-auth.js --scope gmail
    ```
-6. Copy the refresh token to `.mcp.json`
+6. Coller le refresh token dans `.mcp.json`
 
-**Available tools:**
-- `gmail_list_unread` — list unread messages
-- `gmail_read` — read a specific email
-- `gmail_search` — search emails
-- `gmail_send` — send an email
+**Outils disponibles :** `gmail_list_unread`, `gmail_read`, `gmail_search`, `gmail_send`
 
 ---
 
-## MCP Server 2: Google Calendar
+## MCP 2 : Google Calendar
 
-**Purpose:** Read events, create events, check availability.
+**Usage :** lire les événements, créer des RDV, vérifier les disponibilités.
 
-**Install:**
-```bash
-npx @cocal/google-calendar-mcp --version  # auto-installs on first use
-```
+**Install :** auto via `npx` au premier lancement.
 
-**Google OAuth Setup:**
-Same project as Gmail. Enable Calendar API and generate a refresh token with calendar scope:
+**OAuth :** même projet Google que Gmail. Activer l'API Calendar :
 ```bash
 node tools/google-auth.js --scope calendar
 ```
 
-**Available tools:**
-- `list_events` — events for a date range
-- `create_event` — create a calendar event
-- `get_event` — get event details
+**Outils disponibles :** `list_events`, `create_event`, `get_event`
 
 ---
 
-## MCP Server 3: IMAP (Custom mailbox)
+## MCP 3 : IMAP (boîte mail custom)
 
-**Purpose:** Read emails from any IMAP mailbox (Hostinger, ProtonMail bridge, self-hosted, etc.)
+**Usage :** lire les emails de n'importe quelle boîte IMAP (Hostinger, OVH, auto-hébergé...).
 
-**Install:**
+**Install :**
 ```bash
-npm install --prefix src/mcp-imap
+npm install --prefix mcp-imap
 ```
 
-**Configuration:**
+**Config dans `.mcp.json` :**
 ```json
 {
-  "IMAP_HOST": "mail.yourdomain.com",
+  "IMAP_HOST": "mail.tondomaine.com",
   "IMAP_PORT": "993",
-  "IMAP_USER": "you@yourdomain.com",
-  "IMAP_PASSWORD": "your_password",
+  "IMAP_USER": "toi@tondomaine.com",
+  "IMAP_PASSWORD": "...",
   "IMAP_TLS": "true"
 }
 ```
 
-**Available tools:**
-- `fetch_emails` — fetch recent emails from a mailbox
-- `read_email` — read a specific email by UID
+**Outils disponibles :** `fetch_emails`, `read_email`
 
 ---
 
-## MCP Server 4: SNCF (French trains)
+## MCP 4 : SNCF (trains français)
 
-**Purpose:** Look up train schedules between French stations.
+**Usage :** chercher des horaires de train entre gares françaises.
 
-**Install:**
+**Install :**
 ```bash
-npm install --prefix src/mcp-sncf
+npm install --prefix mcp-sncf
 ```
 
-**No API key required** — uses the public SNCF data.
+**Clé API SNCF :** disponible gratuitement sur [data.sncf.com](https://data.sncf.com)
 
-**Available tools:**
-- `search_trains` — find trains between two stations
-- `get_next_trains` — next departures from a station
+**Outils disponibles :** `search_trains`, `get_next_trains`
 
----
-
-## Adding More MCP Servers
-
-The ecosystem is large. Useful additions:
-
-| Server | Use case | Install |
-|--------|----------|---------|
-| `@modelcontextprotocol/server-filesystem` | Read/write local files | `npx` |
-| `@modelcontextprotocol/server-brave-search` | Web search | `npx` + API key |
-| `mcp-server-notion` | Notion pages | npm |
-| `mcp-todoist` | Todoist tasks | npm |
-| `@openbnb/mcp-server-airbnb` | Airbnb search | npm |
-
-Browse the full registry: [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)
+```
+"Prochain train Paris Gare de Lyon → Bordeaux Saint-Jean demain matin ?"
+"Y'a quoi comme TGV entre Lyon et Paris ce soir ?"
+```
 
 ---
 
-## Debugging MCP
+## MCP 5 : Airbnb
 
-If Claude doesn't seem to be using a tool:
+**Usage :** chercher des logements Airbnb directement depuis Telegram.
+
+**Install :**
+```bash
+npm install @openbnb/mcp-server-airbnb
+```
+
+**Aucune clé API requise** — utilise les données publiques Airbnb.
+
+**Config dans `.mcp.json` :**
+```json
+{
+  "airbnb": {
+    "command": "node",
+    "args": ["./node_modules/@openbnb/mcp-server-airbnb/dist/index.js"]
+  }
+}
+```
+
+**Exemples d'utilisation :**
+```
+"Trouve-moi un Airbnb à Lyon pour 2 personnes ce week-end"
+"Airbnb moins de 80€/nuit à Bordeaux en juillet ?"
+"C'est quoi les options à Amsterdam pour 4 jours en mai ?"
+```
+
+---
+
+## Ajouter d'autres MCP
+
+L'écosystème est large. Quelques ajouts utiles :
+
+| Serveur | Usage | Install |
+|---------|-------|---------|
+| `@modelcontextprotocol/server-brave-search` | Recherche web | `npx` + clé API |
+| `mcp-server-notion` | Pages Notion | `npm` |
+| `mcp-todoist` | Tâches Todoist | `npm` |
+| `@modelcontextprotocol/server-filesystem` | Fichiers locaux | `npx` |
+| `mcp-weather` | Météo | `npm` |
+| `mcp-spotify` | Contrôle Spotify | `npm` |
+
+Registre complet : [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)
+
+**Workflow pour ajouter un MCP :**
+1. `npm install <package>`
+2. Ajouter l'entrée dans `.mcp.json`
+3. Redémarrer le process : `pm2 restart assistant`
+4. Claude le découvre automatiquement au prochain appel
+
+---
+
+## Debug MCP
+
+Si Claude n'utilise pas un outil :
 
 ```bash
-# Run Claude interactively to test MCP
+# Tester interactivement
 cd /path/to/project
-claude  # opens interactive mode
+claude
 # > list my unread emails
 
-# Check MCP server loads
+# Vérifier que le serveur MCP démarre
+node mcp-gmail/index.js   # doit rester en écoute sans crash
+
+# Voir les outils disponibles
 claude --mcp-debug -p "what tools do you have?"
 ```
 
-Common issues:
-- Wrong path in `args`
-- Missing credentials in `env`
-- MCP server process crashes on startup (check with `node mcp-xxx/index.js` manually)
+Problèmes courants :
+- Mauvais chemin dans `args`
+- Credentials manquants dans `env`
+- Le process MCP crashe au démarrage (tester à la main)
