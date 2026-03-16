@@ -95,6 +95,25 @@ Lui : [modifie .mcp.json, te demande de faire pm2 restart]
 "/memory" — résumé complet de ta mémoire
 ```
 
+### Rappels persistants
+L'assistant relance automatiquement jusqu'à ce que tu confirmes que c'est fait. Chaque rappel arrive avec deux boutons :
+
+```
+⏰ Rappel : appeler le dentiste
+
+  [ ✅ Fait ]   [ ⏰ +1h ]
+```
+
+Si tu ne réagis pas, il relance avec un backoff exponentiel (1h, 2h, 4h...) jusqu'à 6 fois. Tu peux aussi l'acquitter en parlant naturellement :
+
+```
+"C'est fait"
+"J'ai appelé"
+"Done"
+```
+
+Il comprend le contexte et coche le rappel tout seul.
+
 ### La boucle d'apprentissage
 L'assistant apprend aussi de ses erreurs en temps réel. Si tu lui dis :
 ```
