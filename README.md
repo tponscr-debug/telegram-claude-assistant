@@ -96,6 +96,7 @@ Il détecte le signal, se corrige, et écrit une règle dans ses fichiers mémoi
 4. [Serveurs MCP](docs/mcp-servers.md)
 5. [Scheduler & routines quotidiennes](docs/scheduler.md)
 6. [Déploiement & production](docs/deployment.md)
+7. [Sécurité](docs/security.md)
 
 ---
 
