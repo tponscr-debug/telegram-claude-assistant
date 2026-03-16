@@ -1,0 +1,18 @@
+{
+  "name": "telegram-claude-assistant",
+  "version": "1.0.0",
+  "description": "Personal AI assistant — Telegram + Claude Code CLI + MCP tools",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "init-db": "node tools/init-db.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "better-sqlite3": "^11.0.0",
+    "dotenv": "^16.4.0",
+    "node-cron": "^3.0.3",
+    "telegraf": "^4.16.3"
+  }
+}

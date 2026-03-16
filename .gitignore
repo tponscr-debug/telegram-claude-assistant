@@ -1,0 +1,10 @@
+node_modules/
+.env
+.mcp.json
+.claude_session_id
+data/
+memory/
+!memory-templates/
+*.db
+*.backup.*.db
+data/logs/
