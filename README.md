@@ -60,6 +60,24 @@ Voici des exemples concrets de ce que tu peux dire à ton assistant :
 ```
 "Prochains trains Paris Lyon ce soir ?"
 "Y'a quoi comme TGV demain matin entre Paris et Bordeaux ?"
+"À quelle heure le dernier train Marseille-Paris ?"
+```
+
+### Airbnb
+```
+"Trouve-moi un Airbnb à Lyon pour 2 personnes ce week-end"
+"C'est quoi les options à Amsterdam pour 4 jours en mai, budget 80€/nuit max ?"
+"Airbnb avec terrasse à Bordeaux pour 3 adultes la semaine prochaine ?"
+```
+
+### Ajout d'outils à la volée
+L'assistant peut **suggérer et installer lui-même de nouveaux MCP** si tu lui demandes quelque chose qu'il ne peut pas encore faire :
+```
+Toi : "Consulte mes notes Notion"
+Lui : "Je n'ai pas accès à Notion pour l'instant.
+       Je peux installer le MCP Notion si tu veux — tu me confirmes ?"
+Toi : "Vas-y"
+Lui : [modifie .mcp.json, te demande de faire pm2 restart]
 ```
 
 ### Gestion de projet / réflexion
